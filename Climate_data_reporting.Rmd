@@ -1,0 +1,263 @@
+---
+title: "Climate data reporting analysis"
+date: "September 29 2017"
+output: html_document
+---
+```{r setup, include=F}
+knitr::opts_chunk$set(comment = "#>")
+```
+
+## Analysis of climate reporting practices in published ecology studies
+Morueta-Holme N, Oldfather MF, Olliff-Yang R, Weitz AP, Levine CR, Kling M, Riordan EC, Merow C, Sheth SN, Thornhill AH, Ackerly DD
+
+
+### 0. Prepare data
+Load libraries
+```{r message=FALSE}
+#rm(list=ls())
+require(ggplot2)
+require(dplyr)
+require(gmodels)
+require(tidyr)
+```
+
+Read in the data and select relevant columns
+```{r, message=FALSE}
+rawData1 = read.csv('Climate_reporting_dataset1.csv', as.is=T) 
+rawData2 = read.csv('Climate_reporting_dataset2.csv', as.is=T)
+
+# Select papers that are OK for analysis, and the relevant columns
+df1 = rawData1[,c('ID','publication_year','journal','study_focus','geographic_extent_of_study','tense_description','climate_date_range','climate_data_source','citation_type','description_access_to_source','source_sufficient')]
+
+df2 = rawData2[,c('ID','publication_year','journal','study_focus','geographic_extent_of_study','tense_description','climate_date_range','climate_data_source','citation_type','description_access_to_source','source_sufficient')]
+                    
+#merge the two tables
+df = rbind(df1,df2)
+rm(rawData1,rawData2,df1,df2)
+
+#lump continental and global categories
+df$geographic_extent_of_study[which(df$geographic_extent_of_study=='continental' | df$geographic_extent_of_study=='global')] = 'continental/global'
+
+
+#Rename date range to 'yes/no'
+df$climate_date_range[which(df$climate_date_range==TRUE)] = 'yes'
+df$climate_date_range[which(df$climate_date_range==FALSE)] = 'no'
+
+
+```
+
+
+### 1. General summaries
+
+What is the distribution of geographic extent of study across papers?
+```{r include=T}
+ExtentSum <-
+  df %>%
+  group_by(geographic_extent_of_study) %>%
+  summarise(n=n()) %>%
+  mutate(rel.freq = round(100*n/sum(n), 0))
+ExtentSum
+```
+
+What is the distribution of study focus across papers?
+```{r include=T}
+FocusSum <-
+  df %>%
+  group_by(study_focus) %>%
+  summarise(n=n()) %>%
+  mutate(rel.freq = round(100*n/sum(n), 0))
+FocusSum
+```
+
+How many papers provide climate date range?
+```{r include=T}
+DateRangeSum <-
+  df %>%
+  group_by(climate_date_range) %>%
+  summarise(n=n()) %>%
+  mutate(rel.freq = round(100*n/sum(n), 0))
+DateRangeSum
+```
+
+What are the types of climate data reported in the studies?
+```{r, include=T}
+DataSource <-
+  df %>%
+  group_by(climate_data_source) %>%
+  summarise(n=n()) %>%
+  mutate(rel.freq = round(100*n/sum(n), 0))
+
+DataSource
+```
+
+
+### 2. Evalution of subset for detailed data source information
+```{r, include=T}
+
+df_sub <- df[df$citation_type!='',]
+```
+
+What type of citation is given?
+```{r, include=T}
+CitationSum <-
+  df_sub %>%
+  group_by(citation_type) %>%
+  summarise(n=n()) %>%
+  mutate(rel.freq = round(100*n/sum(n), 0))
+
+CitationSum
+```
+
+Is there information on how to access the climate data?
+```{r, include=T}
+AccessSum <-
+  df_sub %>%
+  group_by(description_access_to_source) %>%
+  summarise(n=n()) %>%
+  mutate(rel.freq = round(100*n/sum(n), 0))
+
+AccessSum
+```
+
+Is the citation given sufficient to retrieve the raw data?
+```{r, include=T}
+CitationSuffSum <-
+  df_sub %>%
+  group_by(source_sufficient) %>%
+  summarise(n=n()) %>%
+  mutate(rel.freq = round(100*n/sum(n), 0))
+
+CitationSuffSum
+```
+
+If some sort of citation is given, is there also information on how to access the data?
+```{r, include=F}
+df_sub$some_citation <- 'no'
+df_sub$some_citation[which(df_sub$citation_type!='incomplete'&df_sub$citation_type!='none')] <- 'yes'
+
+t1 <- CrossTable(df_sub$some_citation, df_sub$description_access_to_source)
+
+SourceAccess <- apply(t1$prop.row,2,function(x) {round(x*100,1)})
+```
+```{r}
+SourceAccess
+
+```
+
+### 3. Crosstabulations for evaluating reporting practices depending on study focus and geographic extent
+
+#### Results across study focus
+Climate data source given for papers with different study focus?
+```{r include=F}
+t1 <- CrossTable(df$study_focus, df$climate_data_source)
+ResFocus1 <-apply(t1$prop.row,2,function(x) {round(x*100,1)})
+```
+```{r}
+ResFocus1
+```
+Climate date range given for papers with different study focus?
+```{r include=F}
+t1 <- CrossTable(df$study_focus, df$climate_date_range)
+ResFocus2 <-apply(t1$prop.row,2,function(x) {round(x*100,1)})
+```
+```{r}
+ResFocus2
+```
+#### Results across geographic extent
+```{r include=F, echo=F}
+t1 <- CrossTable(df$geographic_extent_of_study, df$climate_data_source)
+ResExtent1 <-apply(t1$prop.row,2,function(x) {round(x*100,1)})
+
+t1 <- CrossTable(df$geographic_extent_of_study, df$climate_date_range)
+ResExtent2 <-apply(t1$prop.row,2,function(x) {round(x*100,1)})
+
+t1 <- CrossTable(df$geographic_extent_of_study, df$study_focus)
+ResExtent3 <- apply(t1$prop.row,2,function(x) {round(x*100,1)})
+```
+Climate data source given for different geographic extents?
+```{r}
+ResExtent1
+```
+Climate date range given for different geographic extents?
+```{r}
+ResExtent2
+```
+Distribution of study foci across geographic extents?
+```{r}
+ResExtent3
+```
+
+### 4. Temporal analysis
+```{r include=F}
+# Lump years into decadal time periods except for 2015 papers
+df$decade <- plyr::round_any(df$publication_year, 10, floor)
+df$decade[df$publication_year>=2015] <- 2015
+
+t1 <- CrossTable(df$decade, df$climate_data_source)
+SourcePeriod <- apply(t1$prop.row,2,function(x) {round(x*100,1)})
+
+t1 <- CrossTable(df$decade, df$climate_date_range)
+RangePeriod <- apply(t1$prop.row,2,function(x) {round(x*100,1)})
+
+t1 <- CrossTable(df$decade, df$study_focus)
+FocusPeriod <- apply(t1$prop.row,2,function(x) {round(x*100,1)})
+```
+Trends in reporting of type of climate data
+```{r}
+SourcePeriod
+```
+Trends in reporting of climate date range
+```{r}
+RangePeriod
+```
+Trends in focus of study
+```{r}
+FocusPeriod
+```
+
+### 5. Plot temporal trends
+```{r echo=F}
+# define time periods
+
+#df$paper_focus <- factor(df$paper_focus, levels=sort(unique(df$paper_focus)))
+
+# reporting per time period
+dfs <- group_by(df, decade) %>%
+      summarize(source=mean(climate_data_source=="not_specified"),
+                dates=mean(climate_date_range=="no")) %>%
+      gather(stat, rate, source, dates) %>%
+      mutate(stat=factor(stat, levels=c("dates", "source"),
+                         labels=c("no climate period", "no climate data type")))
+
+
+p <- ggplot() +
+      geom_bar(data=df,  aes(decade, fill=study_focus), position="fill") +
+      geom_line(data=dfs, aes(decade, rate, linetype=stat), size=1) + 
+      geom_point(data=dfs, aes(decade, rate, shape=stat), size=4) +
+      scale_fill_manual(values=c("red3", "yellow3", "steelblue3")) +
+      scale_shape_manual(values=c(16, 1)) +
+      scale_y_continuous(labels=function(x) paste0(round(x*100,1), "%")) +
+      scale_x_continuous(labels=function(x) paste0(x, "s"),
+                         breaks=unique(dfs$decade)) +
+      theme_minimal() +
+      theme(legend.title=element_blank(), legend.position="right",
+            legend.direction="vertical",
+            panel.grid.minor=element_blank(), panel.grid.major.x=element_blank()) +
+      labs(y="Percent of papers",
+           x="Publication period")
+p
+#ggsave("trends.pdf", p, width=7, height=5, units="in")
+
+
+```
+
+### 6. Tense used to describe climate?
+When reporting or not reporting climate date ranges, what tense is used for describing climate?
+```{r include=F}
+table(df$tense)
+t1 <- CrossTable(df$climate_date_range, df$tense)
+DateTense <- apply(t1$prop.row,2,function(x) {round(x*100,1)})
+```
+```{r}
+DateTense
+``` 
