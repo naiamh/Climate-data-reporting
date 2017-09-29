@@ -217,10 +217,6 @@ FocusPeriod
 
 ### 5. Plot temporal trends
 ```{r echo=F}
-# define time periods
-
-#df$paper_focus <- factor(df$paper_focus, levels=sort(unique(df$paper_focus)))
-
 # reporting per time period
 dfs <- group_by(df, decade) %>%
       summarize(source=mean(climate_data_source=="not_specified"),
@@ -246,7 +242,7 @@ p <- ggplot() +
       labs(y="Percent of papers",
            x="Publication period")
 p
-#ggsave("trends.pdf", p, width=7, height=5, units="in")
+ggsave("trends.pdf", p, width=7, height=5, units="in")
 
 
 ```
