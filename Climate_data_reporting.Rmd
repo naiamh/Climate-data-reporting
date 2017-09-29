@@ -1,7 +1,7 @@
 ---
 title: "Climate data reporting analysis"
 date: "September 29 2017"
-output: html_document
+output: github_document
 ---
 ```{r setup, include=F}
 knitr::opts_chunk$set(comment = "#>")
