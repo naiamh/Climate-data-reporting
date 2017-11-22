@@ -1,6 +1,6 @@
 ---
 title: "Climate data reporting analysis"
-date: "September 29 2017"
+date: "November 22 2017"
 output: github_document
 ---
 ```{r setup, include=F}
@@ -230,10 +230,10 @@ p <- ggplot() +
       geom_bar(data=df,  aes(decade, fill=study_focus), position="fill") +
       geom_line(data=dfs, aes(decade, rate, linetype=stat), size=1) + 
       geom_point(data=dfs, aes(decade, rate, shape=stat), size=4) +
-      scale_fill_manual(values=c("red3", "yellow3", "steelblue3")) +
+      scale_fill_manual(values=c("gray10","gray30","gray60")) +
       scale_shape_manual(values=c(16, 1)) +
       scale_y_continuous(labels=function(x) paste0(round(x*100,1), "%")) +
-      scale_x_continuous(labels=function(x) paste0(x, "s"),
+      scale_x_continuous(labels=c("1980s","1990s","2000s","2010-2014","2015"),
                          breaks=unique(dfs$decade)) +
       theme_minimal() +
       theme(legend.title=element_blank(), legend.position="right",

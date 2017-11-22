@@ -1,6 +1,6 @@
 Climate data reporting analysis
 ================
-September 29 2017
+November 22 2017
 
 Analysis of climate reporting practices in published ecology studies
 --------------------------------------------------------------------
